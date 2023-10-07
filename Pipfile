@@ -5,6 +5,9 @@ name = "pypi"
 
 [packages]
 validations = "*"
+flask = "*"
+sqlalchemy = "*"
+flask-migrate = "*"
 
 [dev-packages]
 

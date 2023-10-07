@@ -60,4 +60,6 @@ def update_power(power_id):
         return jsonify({"errors": ["validation errors"]}), 400
 
 if __name__ == '__main__':
-    app.run(port=5555)
+     with app.app_context():
+        db.create_all()
+        app.run(port=5555)
