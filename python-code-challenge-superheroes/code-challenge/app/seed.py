@@ -1,8 +1,7 @@
-import random  # Add this import
+import random
 from sqlalchemy import func
 from flask import Flask 
 from models import db, Hero, Power, HeroPower
-
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
@@ -14,9 +13,8 @@ def seed_database():
     with app.app_context():
         db.create_all()
 
-        # Seeding powers
-        powers_data = [
-            {"name": "super strength", "description": "gives the wielder super-human strengths"},
+        powers_data = [  
+             {"name": "super strength", "description": "gives the wielder super-human strengths"},
             {"name": "flight", "description": "gives the wielder the ability to fly through the skies at supersonic speed"},
             {"name": "super human senses", "description": "allows the wielder to use her senses at a super-human level"},
             {"name": "elasticity", "description": "can stretch the human body to extreme lengths"}
@@ -25,7 +23,6 @@ def seed_database():
             power = Power(**power_info)
             db.session.add(power)
 
-        # Seeding heroes
         heroes_data = [
             {"name": "Kamala Khan", "super_name": "Ms. Marvel"},
             {"name": "Doreen Green", "super_name": "Squirrel Girl"},
@@ -42,15 +39,18 @@ def seed_database():
             hero = Hero(**hero_info)
             db.session.add(hero)
 
-        # Adding powers to heroes
         strengths = ["Strong", "Weak", "Average"]
         heroes = Hero.query.all()
+        powers = Power.query.all()  # Added this line to get all powers
         for hero in heroes:
-            for _ in range(0, 1 + random.randint(0, 2)):  # Randomly assign 1 to 3 powers to each hero
-                power = Power.query.order_by(func.random()).first()  # Randomly select a power
-                hero_power = HeroPower(hero=hero, power=power, strength=random.choice(strengths))
-                db.session.add(hero_power)
+            for _ in range(0, 1 + random.randint(0, 2)):
+                power = random.choice(powers)  # Randomly select a power
+                if power not in hero.powers:  # Prevent duplicates
+                    strength = random.choice(strengths)
+                    hero_power = HeroPower(strength=strength, hero_id=hero.id, power_id=power.id)
+                    db.session.add(hero_power)
 
+        # Commit changes automatically using commit_on_teardown
         db.session.commit()
 
 if __name__ == '__main__':

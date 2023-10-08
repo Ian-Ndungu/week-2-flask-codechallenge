@@ -1,72 +1,55 @@
-#!/usr/bin/env python3
 import random
-from models import Hero, HeroPower, Power, db
-from app import app
+from sqlalchemy import func
+from flask import Flask 
+from models import db, Hero, Power, HeroPower
 
-print("🦸‍♀️ Seeding powers...")
-power_list = [
-    {
-        "name": "super strength",
-        "description": "gives the wielder super-human strengths",
-    },
-    {
-        "name": "flight",
-        "description": "gives the wielder the ability to fly through the skies at supersonic speed",
-    },
-    {
-        "name": "super human senses",
-        "description": "allows the wielder to use her senses at a super-human level",
-    },
-    {
-        "name": "elasticity",
-        "description": "can stretch the human body to extreme lengths",
-    },
-]
+app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-print("🦸‍♀️ Seeding heroes...")
-hero_list = [
-    {"name": "Kamala Khan", "super_name": "Ms. Marvel"},
-    {"name": "Doreen Green", "super_name": "Squirrel Girl"},
-    {"name": "Gwen Stacy", "super_name": "Spider-Gwen"},
-    {"name": "Janet Van Dyne", "super_name": "The Wasp"},
-    {"name": "Wanda Maximoff", "super_name": "Scarlet Witch"},
-    {"name": "Carol Danvers", "super_name": "Captain Marvel"},
-    {"name": "Jean Grey", "super_name": "Dark Phoenix"},
-    {"name": "Ororo Munroe", "super_name": "Storm"},
-    {"name": "Kitty Pryde", "super_name": "Shadowcat"},
-    {"name": "Elektra Natchios", "super_name": "Elektra"},
-]
+db.init_app(app)
 
-print("🦸‍♀️ Adding powers to heroes...")
+def seed_database():
+    with app.app_context():
+        db.create_all()
 
-strengths = ["Strong", "Weak", "Average"]
+        powers_data = [  
+             {"name": "super strength", "description": "gives the wielder super-human strengths"},
+            {"name": "flight", "description": "gives the wielder the ability to fly through the skies at supersonic speed"},
+            {"name": "super human senses", "description": "allows the wielder to use her senses at a super-human level"},
+            {"name": "elasticity", "description": "can stretch the human body to extreme lengths"}
+        ]
+        for power_info in powers_data:
+            power = Power(**power_info)
+            db.session.add(power)
 
-with app.app_context():
-    Hero.query.delete()
-    Power.query.delete()
-    HeroPower.query.delete()
-    heroes = []
-    for hero in hero_list:
-        heroe = Hero(name=hero["name"], super_name=hero["super_name"])
-        heroes.append(heroe)
-    db.session.add_all(heroes)
+        heroes_data = [
+            {"name": "Kamala Khan", "super_name": "Ms. Marvel"},
+            {"name": "Doreen Green", "super_name": "Squirrel Girl"},
+            {"name": "Gwen Stacy", "super_name": "Spider-Gwen"},
+            {"name": "Janet Van Dyne", "super_name": "The Wasp"},
+            {"name": "Wanda Maximoff", "super_name": "Scarlet Witch"},
+            {"name": "Carol Danvers", "super_name": "Captain Marvel"},
+            {"name": "Jean Grey", "super_name": "Dark Phoenix"},
+            {"name": "Ororo Munroe", "super_name": "Storm"},
+            {"name": "Kitty Pryde", "super_name": "Shadowcat"},
+            {"name": "Elektra Natchios", "super_name": "Elektra"}
+        ]
+        for hero_info in heroes_data:
+            hero = Hero(**hero_info)
+            db.session.add(hero)
 
-    powers = []
-    for power in power_list:
-        pow = Power(name=power["name"], description=power["description"])
-        powers.append(pow)
-    db.session.add_all(powers)
-    strs = []
-    for strength in strengths:
-        st = HeroPower(
-            strength=strength,
-            hero_id=random.randint(1, len(heroes)),
-            power_id=random.randint(1, len(powers)),
-        )
-        strs.append(st)
-    db.session.add_all(strs)
+        strengths = ["Strong", "Weak", "Average"]
+        heroes = Hero.query.all()
+        for hero in heroes:
+            for _ in range(0, 1 + random.randint(0, 2)):
+                power = Power.query.order_by(func.random()).first()
+                if power not in hero.powers:  # Prevent duplicates
+                    hero_power = HeroPower(hero=hero, power=power, strength=random.choice(strengths))
+                    db.session.add(hero_power)
 
-    db.session.commit()
+        # Commit changes automatically using commit_on_teardown
+        db.session.commit()
 
-
-print("🦸‍♀️ Done seeding!")
+if __name__ == '__main__':
+    seed_database()
