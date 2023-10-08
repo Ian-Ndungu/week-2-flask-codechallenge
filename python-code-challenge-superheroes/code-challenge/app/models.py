@@ -26,7 +26,6 @@ class Power(db.Model):
     created_at = db.Column(db.DateTime, server_default=db.func.now())
     updated_at = db.Column(db.DateTime, onupdate=db.func.now())
     heroes = db.relationship("Hero", secondary="hero_powers", back_populates="powers")
-
     @validates("description")
     def validate_description(self, key, description):
         if description.strip() != "" and len(description) < 20:
